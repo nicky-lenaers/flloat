@@ -1,30 +1,27 @@
 #!/usr/bin/python3
 
-# import requests
-# import json
-import json
+import os
 import sys
 from networkx.readwrite import json_graph
 import networkx as nx
-import jsons
 import flask
-from flask import jsonify
-
+from flask import jsonify, request, json
+import hashlib
 from flloat.parser.ldlf import LDLfParser
+from PySimpleAutomata.automata_IO import dfa_to_json, dfa_dot_importer
 
-parser = LDLfParser()
-formula_string = "<true*; a & b>tt"
-formula = parser(formula_string)        # returns a LDLfFormula
+# parser = LDLfParser()
+# formula_string = "<true*; a & b>tt"
+# formula = parser(formula_string)        # returns a LDLfFormula
 
 # print(formula)                          # prints "<((true)* ; (a & b))>(tt)"
 # print(formula.find_labels())            # prints {a, b}
 
-dfa = formula.to_automaton()
+# dfa = formula.to_automaton()
+# graph = dfa.to_graphviz()
+# graph.render("./my-automaton")
 
-graph = dfa.to_graphviz()
-graph.render("./my-automaton")
-
-dot_graph = nx.nx_pydot.read_dot("./my-automaton")
+# dot_graph = nx.nx_pydot.read_dot("./my-automaton")
 
 app = flask.Flask(__name__)
 app.config["DEBUG"] = True
@@ -32,10 +29,32 @@ app.config["DEBUG"] = True
 
 @app.route('/', methods=['GET'])
 def home():
-    # TODO: first dump the graph, then transform it to JSON and send it here using: https://stackoverflow.com/questions/40262441/how-to-transform-a-dot-graph-to-json-graph
-    return json.dumps(json_graph.node_link_data(dot_graph))
-    # json.dumps(json_graph.node_link_data(dot_graph))
-    # return jsonify(dfa)
+    print("FORMULA: ", request.args.get('formula'))
+
+    parser = LDLfParser()
+    formula_string = request.args.get('formula')
+    formula = parser(formula_string)
+
+    formula_filename = hashlib.md5(formula_string.encode('ascii')).hexdigest()
+
+    # Dump
+    dfa = formula.to_automaton()
+    graph = dfa.to_graphviz()
+    graph.render("./formulas/" + formula_filename)
+
+    # Read
+    # dot_graph = nx.nx_pydot.read_dot("./formulas/" + formula_filename)
+
+    # Read 2.0
+    dfa_imported = dfa_dot_importer('./formulas/' + formula_filename)
+
+    # Dump again as JSON
+    dfa_to_json(dfa_imported, './formulas/' + formula_filename)
+    SITE_ROOT = os.path.realpath(os.path.dirname(__file__))
+    json_url = os.path.join(SITE_ROOT, "formulas", formula_filename + ".json")
+
+    return json.load(open(json_url))
+    # return json.dumps(json_graph.node_link_data(dot_graph))
 
 
 app.run()

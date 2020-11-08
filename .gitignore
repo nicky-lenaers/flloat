@@ -333,3 +333,5 @@ pip-selfcheck.json
 .history
 
 # End of https://www.gitignore.io/api/vim,linux,macos,python,pycharm,virtualenv,sublimetext,jupyternotebooks,visualstudiocode
+
+formulas/
