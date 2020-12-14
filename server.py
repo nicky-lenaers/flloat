@@ -40,21 +40,16 @@ def home():
     # Dump
     dfa = formula.to_automaton()
     graph = dfa.to_graphviz()
-    graph.render("./formulas/" + formula_filename)
+    graph.render("./formulas/" + formula_filename + ".dot")
 
-    # Read
-    # dot_graph = nx.nx_pydot.read_dot("./formulas/" + formula_filename)
+    import subprocess
+    subprocess.run(["dot", "-Txdot_json", "./formulas/" + formula_filename + ".dot",
+                    "-o", "./formulas/" + formula_filename + ".json"])
 
-    # Read 2.0
-    dfa_imported = dfa_dot_importer('./formulas/' + formula_filename)
-
-    # Dump again as JSON
-    dfa_to_json(dfa_imported, './formulas/' + formula_filename)
     SITE_ROOT = os.path.realpath(os.path.dirname(__file__))
     json_url = os.path.join(SITE_ROOT, "formulas", formula_filename + ".json")
 
     return json.load(open(json_url))
-    # return json.dumps(json_graph.node_link_data(dot_graph))
 
 
 app.run()
