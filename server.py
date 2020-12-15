@@ -18,22 +18,29 @@ def home():
     formula_filename = hashlib.md5(formula_string.encode('ascii')).hexdigest()
     SITE_ROOT = os.path.realpath(os.path.dirname(__file__))
     json_url = os.path.join(SITE_ROOT, "formulas", formula_filename + ".json")
+    graph_url = os.path.join(SITE_ROOT, "formulas", formula_filename + ".dot")
 
-    if path.exists(json_url):
-        return json.load(open(json_url))
+    if path.exists(json_url) and path.exists(graph_url):
+        return {
+            "asDOT": open(graph_url).read(),
+            "asJSON": json.load(open(json_url))
+        }
 
     formula = parser(formula_string)
 
     # Dump
     dfa = formula.to_automaton()
     graph = dfa.to_graphviz()
-    graph.render("./formulas/" + formula_filename + ".dot")
+    graph.render(graph_url)
 
     import subprocess
-    subprocess.run(["dot", "-Txdot_json", "./formulas/" + formula_filename + ".dot",
+    subprocess.run(["dot", "-Txdot_json", graph_url,
                     "-o", "./formulas/" + formula_filename + ".json"])
 
-    return json.load(open(json_url))
+    return {
+        "asDOT": open(graph_url).read(),
+        "asJSON": json.load(open(json_url))
+    }
 
 
 app.run()
